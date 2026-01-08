@@ -42,6 +42,8 @@ python handwave.py
 
 Make sure your webcam is enabled.
 
+**📚 For detailed usage instructions, see [USAGE.md](USAGE.md)**
+
 ## 🎨 GUI Features
 - Modern dark theme interface
 - Real-time video feed display
