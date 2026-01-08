@@ -57,4 +57,29 @@ Make sure your webcam is enabled.
 - 🖖 **Ring finger up**: Scroll up
 - 🤚 **Middle finger**: Scroll down
 
+## 📸 Screenshots
+
+### Beautiful GUI Interface
+![HandWave GUI](https://github.com/user-attachments/assets/6ce7f99f-3f3a-43b6-8bd6-b400d4bc172a)
+
+The new GUI features:
+- **Modern dark theme** with Catppuccin-inspired colors
+- **Real-time video display** with hand landmark visualization
+- **Interactive controls** for starting/stopping tracking
+- **Live statistics** showing gesture counts
+- **Configurable gestures** - enable/disable individual gestures
+- **Visual status indicators** showing tracking state
+- **Built-in gesture guide** for quick reference
+
+## 📊 Comparison: CLI vs GUI
+
+| Feature | Original (CLI) | New (GUI) |
+|---------|---------------|-----------|
+| Interface | OpenCV window | Modern Tkinter GUI |
+| Controls | Keyboard only | Click buttons |
+| Statistics | None | Real-time counters |
+| Gesture Config | Code editing | Toggle switches |
+| Status Display | None | Visual indicators |
+| User Experience | Basic | Professional |
+
 Made with ❤️ by John

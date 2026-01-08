@@ -19,6 +19,8 @@ class HandWaveGUI:
         self.drawing_utils = mp.solutions.drawing_utils
         self.screen_width, self.screen_height = pyautogui.size()
         self.index_y = 0
+        self.thumb_x = 0
+        self.thumb_y = 0
         self.is_running = False
         self.thread = None
         
@@ -30,6 +32,10 @@ class HandWaveGUI:
         # Gesture enable flags
         self.click_enabled = tk.BooleanVar(value=True)
         self.scroll_enabled = tk.BooleanVar(value=True)
+        
+        # Gesture timing (for debouncing)
+        self.last_click_time = 0
+        self.last_scroll_time = 0
         
         # Create GUI
         self.create_widgets()
@@ -285,6 +291,7 @@ class HandWaveGUI:
         self.video_canvas.config(image='', text="Camera stopped")
     
     def process_video(self):
+        import time
         while self.is_running:
             ret, frame = self.cap.read()
             if not ret:
@@ -296,6 +303,8 @@ class HandWaveGUI:
             output = self.hand_detector.process(rgb_frame)
             hands = output.multi_hand_landmarks
             
+            current_time = time.time()
+            
             if hands:
                 for hand in hands:
                     self.drawing_utils.draw_landmarks(frame, hand)
@@ -306,43 +315,47 @@ class HandWaveGUI:
                         
                         if id == 12:  # Middle finger
                             cv2.circle(img=frame, center=(x, y), radius=10, color=(0, 255, 255))
-                            middie_x = self.screen_width / frame_width * x
-                            middie_y = self.screen_height / frame_height * y
-                            if self.scroll_enabled.get() and abs(middie_y - self.index_y) < 40:
-                                pyautogui.scroll(-320)
-                                self.scroll_down_count += 1
-                                self.root.after(0, self.update_stats)
-                                pyautogui.sleep(0.1)
+                            middle_x = self.screen_width / frame_width * x
+                            middle_y = self.screen_height / frame_height * y
+                            if self.scroll_enabled.get() and abs(middle_y - self.index_y) < 40:
+                                if current_time - self.last_scroll_time > 0.3:  # Debounce
+                                    pyautogui.scroll(-320)
+                                    self.scroll_down_count += 1
+                                    self.root.after(0, self.update_stats)
+                                    self.last_scroll_time = current_time
                         
                         if id == 4:  # Thumb
                             cv2.circle(img=frame, center=(x, y), radius=10, color=(0, 255, 255))
-                            index_x = self.screen_width / frame_width * x
-                            self.index_y = self.screen_height / frame_height * y
+                            self.thumb_x = self.screen_width / frame_width * x
+                            self.thumb_y = self.screen_height / frame_height * y
                         
                         if id == 8:  # Index finger
                             cv2.circle(img=frame, center=(x, y), radius=10, color=(0, 255, 255))
-                            thumb_x = self.screen_width / frame_width * x
-                            thumb_y = self.screen_height / frame_height * y
-                            pyautogui.moveTo(thumb_x, thumb_y)
-                            if self.click_enabled.get() and abs(self.index_y - thumb_y) < 50:
-                                pyautogui.click()
-                                self.click_count += 1
-                                self.root.after(0, self.update_stats)
+                            index_x = self.screen_width / frame_width * x
+                            index_y = self.screen_height / frame_height * y
+                            pyautogui.moveTo(index_x, index_y)
+                            self.index_y = index_y
+                            if self.click_enabled.get() and abs(self.thumb_y - index_y) < 50:
+                                if current_time - self.last_click_time > 0.5:  # Debounce
+                                    pyautogui.click()
+                                    self.click_count += 1
+                                    self.root.after(0, self.update_stats)
+                                    self.last_click_time = current_time
                         
                         if id == 16:  # Ring finger
                             cv2.circle(img=frame, center=(x, y), radius=10, color=(255, 0, 255))
                             ring_x = self.screen_width / frame_width * x
                             ring_y = self.screen_height / frame_height * y
                             if self.scroll_enabled.get() and abs(ring_y - self.index_y) < 50:
-                                pyautogui.scroll(320)
-                                self.scroll_up_count += 1
-                                self.root.after(0, self.update_stats)
-                                pyautogui.sleep(0.1)
+                                if current_time - self.last_scroll_time > 0.3:  # Debounce
+                                    pyautogui.scroll(320)
+                                    self.scroll_up_count += 1
+                                    self.root.after(0, self.update_stats)
+                                    self.last_scroll_time = current_time
             
-            # Convert frame to PhotoImage for tkinter
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            img = Image.fromarray(frame_rgb)
-            img = img.resize((640, 480), Image.Resampling.LANCZOS)
+            # Reuse rgb_frame for display (already converted)
+            img = Image.fromarray(rgb_frame)
+            img = img.resize((640, 480), Image.Resampling.NEAREST)  # Faster resampling
             photo = ImageTk.PhotoImage(image=img)
             
             # Update video canvas
